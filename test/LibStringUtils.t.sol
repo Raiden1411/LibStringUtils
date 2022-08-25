@@ -445,6 +445,7 @@ contract LibStringUtilsTest is Test {
         assertEq(str[11], strSplit[11]);
         assertEq(str[12], strSplit[12]);
         assertEq(str[13], strSplit[13]);
+        assertEq(str[14], strSplit[14]);
         assertEq(str.length, strSplit.length);
     }
 
@@ -455,6 +456,21 @@ contract LibStringUtilsTest is Test {
 
         string[] memory strSplit = LibStringUtils.split(
             "searchmiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladythis",
+            "miladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymilady"
+        );
+
+        assertEq(str[0], strSplit[0]);
+        assertEq(str[1], strSplit[1]);
+        assertEq(str.length, strSplit.length);
+    }
+
+    function testSplitLongggDelimiter32Plus() public {
+        string[] memory str = new string[](2);
+        str[0] = "searchsearchsearchsearchsearchsearch";
+        str[1] = "this";
+
+        string[] memory strSplit = LibStringUtils.split(
+            "searchsearchsearchsearchsearchsearchmiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladythis",
             "miladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymilady"
         );
 
