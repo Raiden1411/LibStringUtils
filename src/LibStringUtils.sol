@@ -459,7 +459,7 @@ library LibStringUtils {
                 mstore(add(result, add(0x20, add(o, subjectLength))), mload(add(concat, o)))
                 o := add(o, 0x20)
                 // prettier-ignore
-                if iszero(lt(o, totalLength)) { break }
+                if iszero(lt(add(o, subjectLength), totalLength)) { break }
             }
             // Allocate memory for the length and the bytes,
             // rounded up to a multiple of 32.
@@ -491,17 +491,17 @@ library LibStringUtils {
         }
     }
 
-    // @author This only works on strings less than 32 bits
-    // In the future i hope to figure out for more than 32 bits
-    // Still great learning experience and by far the most challenging one here
+    // Great learning experience and by far the most challenging one here
+    // Needs a fix for words 32bit plus on delimiter. Possibly going to use keccak256 to check and compare
     function split(string memory subject, string memory delim) internal pure returns(string[] memory result){
         string memory val = concatenate(subject, delim);
         assembly {
-            //Gets lengths of concatenated word and delimiter
             let delimLength := mload(delim)
             let length := mload(val)
             //Create new pointer for substrings
             let ptr := add(mload(0x40), 0x20)
+            //copies pointer to the stack so it can be used to calculate the pointer location of the strings
+            let copyPtr := ptr
             //Sets helper counter used to calculate string length and array length
             //Counter for array length
             let counter := 0
@@ -515,7 +515,7 @@ library LibStringUtils {
             val := add(val, 0x20)
             delim := add(delim, 0x20)
             //Loops one char at a time
-            for {let i:= 0} lt(i, length) {}{
+            for {let i:= 0} or(eq(i, length), lt(i, length)) {}{
                 //Moves pointer by i value
                 let start := add(val, i)
                 //Grabs chars based on pattern
@@ -538,15 +538,15 @@ library LibStringUtils {
                         mstore(add(ptr, add(0x20, lengthCounter)), 0)
                         //Stores length at the ptr current location
                         mstore(ptr, lengthCounter)
-                        // counter++
-                        counter := add(counter, 1)
                     }
                     //Calculates the new pointer to store the new word
-                    ptr := add(ptr, and(add(lengthCounter, 0x60), not(0x1f)))
+                    ptr := add(ptr, and(add(lengthCounter, 0x40), not(0x1f)))
                     //Add to total string size
                     arrMemoryAlloc := add(arrMemoryAlloc, lengthCounter)
                     //Reset the str length
                     lengthCounter := 0
+                    // counter++
+                    counter := add(counter, 1)
                     //skips the delim word in subject
                     i:= add(i, delimLength)
                 }
@@ -555,14 +555,16 @@ library LibStringUtils {
             //Stores the array length
             mstore(result, counter)
             // Allocate memory for the length and the bytes of all strings,
+            //mstore(0x40, add(result, and(add(arrMemoryAlloc, 0x60), not(0x1f))))
             mstore(0x40, add(add(result, 0x20), mul(0x20, counter)))
-            for {} gt(counter, 0) {} {
-                //Calculates the pointer with the string location by going backwards from starting point
-                ptr := sub(ptr, and(add(arrMemoryAlloc, 0x60), not(0x1f)))
-                counter := sub(counter, 1)
-                //Stores the pointer in the array result
-                mstore(add(result, add(0x20, mul(0x20, counter))), ptr)
-            }        
+            //Loop to fill the result array with the pointer location for the strings
+            for {let i:= 0} lt(i, counter) {i:=add(i, 1)} {
+                let lenPointer := mload(copyPtr)
+                //Calculates the pointer with the string location
+                mstore(add(result, add(0x20, mul(0x20, i))), copyPtr)
+                //Calculates the pointer with the string location based on the len stored at the first pointer location
+                copyPtr := add(copyPtr, and(add(lenPointer, 0x40), not(0x1f)))
+            }       
         }
     }
 

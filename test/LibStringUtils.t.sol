@@ -312,14 +312,15 @@ contract LibStringUtilsTest is Test {
     }
 
     function testSplitLong() public {
-        string[] memory str = new string[](7);
-        str[0] = "y";
+        string[] memory str = new string[](8);
+        str[0] = "";
         str[1] = "y";
         str[2] = "y";
         str[3] = "y";
         str[4] = "y";
         str[5] = "y";
         str[6] = "y";
+        str[7] = "y";
 
         string[] memory strSplit = LibStringUtils.split(
             "miladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymilady",
@@ -333,11 +334,12 @@ contract LibStringUtilsTest is Test {
         assertEq(str[4], strSplit[4]);
         assertEq(str[5], strSplit[5]);
         assertEq(str[6], strSplit[6]);
+        assertEq(str[7], strSplit[7]);
         assertEq(str.length, strSplit.length);
     }
 
     function testSplitLongggg() public {
-        string[] memory str = new string[](14);
+        string[] memory str = new string[](15);
         str[0] = "mi";
         str[1] = "mi";
         str[2] = "mi";
@@ -351,7 +353,8 @@ contract LibStringUtilsTest is Test {
         str[10] = "mi";
         str[11] = "mi";
         str[12] = "mi";
-        str[13] = "";
+        str[13] = "mi";
+        str[14] = "";
 
         string[] memory strSplit = LibStringUtils.split(
             "miladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymilady",
@@ -375,8 +378,7 @@ contract LibStringUtilsTest is Test {
         assertEq(str.length, strSplit.length);
     }
 
-    //Out of gas error. Do not debug this with forge debug it will freeze
-    function testFailSplit() public {
+    function testSplitFixed() public {
         string[] memory str = new string[](8);
         str[0] = "m";
         str[1] = "ladym";
@@ -399,6 +401,23 @@ contract LibStringUtilsTest is Test {
         assertEq(str[5], strSplit[5]);
         assertEq(str[6], strSplit[6]);
         assertEq(str[7], strSplit[7]);
+        assertEq(str.length, strSplit.length);
+    }
+
+    function testSplit32plus() public {
+        string[] memory str = new string[](2);
+        str[
+            0
+        ] = "miladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymilady";
+        str[1] = "milady";
+
+        string[] memory strSplit = LibStringUtils.split(
+            "miladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladyjesusmilady",
+            "jesus"
+        );
+
+        assertEq(str[0], strSplit[0]);
+        assertEq(str[1], strSplit[1]);
         assertEq(str.length, strSplit.length);
     }
 
