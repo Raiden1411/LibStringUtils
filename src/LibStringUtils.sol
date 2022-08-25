@@ -492,7 +492,6 @@ library LibStringUtils {
     }
 
     // Great learning experience and by far the most challenging one here
-    // Needs a fix for words 32bit plus on delimiter. Possibly going to use keccak256 to check and compare
     function split(string memory subject, string memory delim) internal pure returns(string[] memory result){
         string memory val = concatenate(subject, delim);
         assembly {
@@ -514,10 +513,45 @@ library LibStringUtils {
             //Moves pointer to start of the string value
             val := add(val, 0x20)
             delim := add(delim, 0x20)
+            let hash := 0
+            if gt(delimLength, 32){
+                hash := keccak256(delim, delimLength)
+            }
             //Loops one char at a time
             for {let i:= 0} or(eq(i, length), lt(i, length)) {}{
                 //Moves pointer by i value
                 let start := add(val, i)
+                //If the hash is not 0 then we perform the string calcs from here
+                if hash {
+                    if iszero(eq(keccak256(start, delimLength), hash)){
+                        mstore(add(ptr, add(0x20, lengthCounter)), mload(start))
+                        //Adds one to word length
+                        lengthCounter := add(lengthCounter, 1)
+                        //Skips to next char
+                        i:= add(i, 1)
+                        continue
+                    }
+
+                    if eq(keccak256(start, delimLength), hash){
+                        if iszero(eq(lengthCounter, 0)){
+                            //Stores 0s based on the pointer location with the length counter added so we can clean the bits that we don't care about
+                            mstore(add(ptr, add(0x20, lengthCounter)), 0)
+                            //Stores length at the ptr current location
+                            mstore(ptr, lengthCounter)
+                        }
+                        //Calculates the new pointer to store the new word
+                        ptr := add(ptr, and(add(lengthCounter, 0x40), not(0x1f)))
+                        //Add to total string size
+                        arrMemoryAlloc := add(arrMemoryAlloc, lengthCounter)
+                        //Reset the str length
+                        lengthCounter := 0
+                        // counter++
+                        counter := add(counter, 1)
+                        //skips the delim word in subject
+                        i:= add(i, delimLength)
+                        continue
+                    }
+                }
                 //Grabs chars based on pattern
                 let compare := shr(pattern, xor(mload(start), mload(delim)))
                 //If compare != 0 then store it to pointer current location
@@ -555,7 +589,6 @@ library LibStringUtils {
             //Stores the array length
             mstore(result, counter)
             // Allocate memory for the length and the bytes of all strings,
-            //mstore(0x40, add(result, and(add(arrMemoryAlloc, 0x60), not(0x1f))))
             mstore(0x40, add(add(result, 0x20), mul(0x20, counter)))
             //Loop to fill the result array with the pointer location for the strings
             for {let i:= 0} lt(i, counter) {i:=add(i, 1)} {

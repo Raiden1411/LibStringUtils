@@ -289,6 +289,26 @@ contract LibStringUtilsTest is Test {
         assertEq(str.length, strSplit.length);
     }
 
+    function testBrutalizeSplit() public {
+        string[] memory str = new string[](2);
+        str[0] = "m";
+        str[1] = "lady";
+
+        assembly {
+            mstore(mload(0x40), not(0))
+            mstore(0x40, add(mload(0x40), 0x20))
+        }
+
+        string[] memory strSplit = LibStringUtils.split("milady", "i");
+        assembly {
+            mstore(mload(0x40), not(0))
+            mstore(0x40, add(mload(0x40), 0x20))
+        }
+        assertEq(str[0], strSplit[0]);
+        assertEq(str[1], strSplit[1]);
+        assertEq(str.length, strSplit.length);
+    }
+
     function testSplitMed() public {
         string[] memory str = new string[](6);
         str[0] = "mi";
@@ -375,6 +395,71 @@ contract LibStringUtilsTest is Test {
         assertEq(str[11], strSplit[11]);
         assertEq(str[12], strSplit[12]);
         assertEq(str[13], strSplit[13]);
+        assertEq(str.length, strSplit.length);
+    }
+
+    function testBrutalizeSplitLongggg() public {
+        string[] memory str = new string[](15);
+        str[0] = "mi";
+        str[1] = "mi";
+        str[2] = "mi";
+        str[3] = "mi";
+        str[4] = "mi";
+        str[5] = "mi";
+        str[6] = "mi";
+        str[7] = "mi";
+        str[8] = "mi";
+        str[9] = "mi";
+        str[10] = "mi";
+        str[11] = "mi";
+        str[12] = "mi";
+        str[13] = "mi";
+        str[14] = "";
+
+        assembly {
+            mstore(mload(0x40), not(0))
+            mstore(0x40, add(mload(0x40), 0x20))
+        }
+
+        string[] memory strSplit = LibStringUtils.split(
+            "miladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymilady",
+            "lady"
+        );
+
+        assembly {
+            mstore(mload(0x40), not(0))
+            mstore(0x40, add(mload(0x40), 0x20))
+        }
+
+        assertEq(str[0], strSplit[0]);
+        assertEq(str[1], strSplit[1]);
+        assertEq(str[2], strSplit[2]);
+        assertEq(str[3], strSplit[3]);
+        assertEq(str[4], strSplit[4]);
+        assertEq(str[5], strSplit[5]);
+        assertEq(str[6], strSplit[6]);
+        assertEq(str[7], strSplit[7]);
+        assertEq(str[8], strSplit[8]);
+        assertEq(str[9], strSplit[9]);
+        assertEq(str[10], strSplit[10]);
+        assertEq(str[11], strSplit[11]);
+        assertEq(str[12], strSplit[12]);
+        assertEq(str[13], strSplit[13]);
+        assertEq(str.length, strSplit.length);
+    }
+
+    function testSplitLongggDelimiter() public {
+        string[] memory str = new string[](2);
+        str[0] = "search";
+        str[1] = "this";
+
+        string[] memory strSplit = LibStringUtils.split(
+            "searchmiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladythis",
+            "miladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymiladymilady"
+        );
+
+        assertEq(str[0], strSplit[0]);
+        assertEq(str[1], strSplit[1]);
         assertEq(str.length, strSplit.length);
     }
 
