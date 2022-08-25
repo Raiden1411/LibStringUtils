@@ -431,30 +431,75 @@ library LibStringUtils {
         }
     }
 
+    //This function is cheaper than string.concat()
+    function concatenate(string memory subject, string memory concat) internal pure returns(string memory result){
+        assembly{
+            //Load length
+            let subjectLength := mload(subject)
+            let concatenateLength := mload(concat)
+            //Load Free memory pointer
+            result := mload(0x40)
+            //Calculates the result length
+            let totalLength := add(subjectLength, concatenateLength)
+            //Moves pointer
+            subject := add(subject, 0x20)
+            concat := add(concat, 0x20)
+            //Stores result length
+            mstore(result, totalLength)
+            //Loops one word at a time
+            for { let w := 0 } 1 {} {
+                //Stores 32 bytes
+                mstore(add(result, add(w, 0x20)), mload(add(subject, w)))
+                w := add(w, 0x20)
+                if iszero(lt(w, subjectLength)) { break }
+            }
+            //Loops one word at a time
+            for { let o := 0 } 1 {} {
+                //Stores 32 bytes at the result pointer + subjectLength
+                mstore(add(result, add(0x20, add(o, subjectLength))), mload(add(concat, o)))
+                o := add(o, 0x20)
+                // prettier-ignore
+                if iszero(lt(o, totalLength)) { break }
+            }
+            // Allocate memory for the length and the bytes,
+            // rounded up to a multiple of 32.
+            mstore(0x40, add(result, and(add(totalLength, 0x40), not(0x1f))))
+        }
+    }
+
+    function concatenate32(string memory subject, string memory concat) internal pure returns(string memory result){
+        assembly{
+            //Loads strings length
+            let subjectLength := mload(subject)
+            let concatLength := mload(concat)
+            //Load free memory pointer
+            result := mload(0x40)
+            //Calculate total length
+            let length := add(subjectLength, concatLength)
+            //Moves pointer by 0x20
+            subject := add(subject, 0x20)
+            concat := add(concat, 0x20)
+            //Store string length
+            mstore(result, length)
+            //Stores the subject at the begining of the pointer
+            mstore(add(result, 0x20), mload(subject))
+            //Moves pointer by subjectLength and stores the delimiter there
+            mstore(add(result, add(0x20, subjectLength)), mload(concat))
+            //Allocate memory for the length and the bytes,
+            //rounded up to a multiple of 32.
+            mstore(0x40, add(result, and(add(length, 0x40), not(0x1f))))
+        }
+    }
+
     // @author This only works on strings less than 32 bits
     // In the future i hope to figure out for more than 32 bits
     // Still great learning experience and by far the most challenging one here
-    function split32(string memory subject, string memory delim) internal pure returns(string[] memory result){
+    function split(string memory subject, string memory delim) internal pure returns(string[] memory result){
+        string memory val = concatenate(subject, delim);
         assembly {
-            //Loads strings length
-            let subjectLength := mload(subject)
+            //Gets lengths of concatenated word and delimiter
             let delimLength := mload(delim)
-            //Load free memory pointer
-            let val := mload(0x40)
-            //Calculate total length
-            let length := add(subjectLength, delimLength)
-            //Moves pointer by 0x20
-            subject := add(subject, 0x20)
-            delim := add(delim, 0x20)
-            //Store string length
-            mstore(val, length)
-            //Stores the subject at the begining of the pointer
-            mstore(add(val, 0x20), mload(subject))
-            //Moves pointer by subjectLength and stores the delimiter there
-            mstore(add(val, add(0x20, subjectLength)), mload(delim))
-            //Allocate memory for the length and the bytes,
-            //rounded up to a multiple of 32.
-            mstore(0x40, add(val, and(add(length, 0x40), not(0x1f))))
+            let length := mload(val)
             //Create new pointer for substrings
             let ptr := add(mload(0x40), 0x20)
             //Sets helper counter used to calculate string length and array length
@@ -468,6 +513,7 @@ library LibStringUtils {
             let pattern := shl(3, sub(32, and(delimLength, 31)))
             //Moves pointer to start of the string value
             val := add(val, 0x20)
+            delim := add(delim, 0x20)
             //Loops one char at a time
             for {let i:= 0} lt(i, length) {}{
                 //Moves pointer by i value
@@ -517,42 +563,6 @@ library LibStringUtils {
                 //Stores the pointer in the array result
                 mstore(add(result, add(0x20, mul(0x20, counter))), ptr)
             }        
-        }
-    }
-
-    //This function is cheaper than string.concat()
-    function concatenate(string memory subject, string memory concat) internal pure returns(string memory result){
-        assembly{
-            //Load length
-            let subjectLength := mload(subject)
-            let concatenateLength := mload(concat)
-            //Load Free memory pointer
-            result := mload(0x40)
-            //Calculates the result length
-            let totalLength := add(subjectLength, concatenateLength)
-            //Moves pointer
-            subject := add(subject, 0x20)
-            concat := add(concat, 0x20)
-            //Stores result length
-            mstore(result, totalLength)
-            //Loops one word at a time
-            for { let w := 0 } 1 {} {
-                //Stores 32 bytes
-                mstore(add(result, add(w, 0x20)), mload(add(subject, w)))
-                w := add(w, 0x20)
-                if iszero(lt(w, subjectLength)) { break }
-            }
-            //Loops one word at a time
-            for { let o := 0 } 1 {} {
-                //Stores 32 bytes at the result pointer + subjectLength
-                mstore(add(result, add(0x20, add(o, subjectLength))), mload(add(concat, o)))
-                o := add(o, 0x20)
-                // prettier-ignore
-                if iszero(lt(o, totalLength)) { break }
-            }
-            // Allocate memory for the length and the bytes,
-            // rounded up to a multiple of 32.
-            mstore(0x40, add(result, and(add(totalLength, 0x40), not(0x1f))))
         }
     }
 
