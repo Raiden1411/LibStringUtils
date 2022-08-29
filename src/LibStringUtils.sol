@@ -10,7 +10,7 @@ library LibStringUtils {
     function at(string memory _str, uint value) internal pure returns(string memory result) {
         assembly{
             //Check if the value of the index provided is >= than the length on the string. Revert if the condition is true
-            if or(gt(value, mload(_str)), eq(value, mload(_str))) {
+            if or(iszero(lt(value, mload(_str))), eq(value, mload(_str))) {
                 //Store the offset of NotValidIndex()
                 mstore(0x00, 0x4d999543)
                 //Revert with (offset, size).
@@ -74,7 +74,7 @@ library LibStringUtils {
     function codePointAt(string memory _str, uint value) internal pure returns(uint result) {
         assembly{
             //Check if the value of the index provided is >= than the length on the string. Revert if the condition is true
-            if or(gt(value, mload(_str)), eq(value, mload(_str))) {
+            if or(iszero(lt(value, mload(_str))), eq(value, mload(_str))) {
                 //Store the offset of NotValidIndex()
                 mstore(0x00, 0x4d999543)
                 //Revert with (offset, size).
@@ -96,7 +96,7 @@ library LibStringUtils {
             let compareLength := mload(compare)
             checked := false
             //Check if the compareTo length is > than the length of the compare string. Returns false if the condition is true
-            if gt(compareToLength, compareLength) {
+            if iszero(lt(compareToLength, compareLength)) {
                 //Stores 0 to return false
                 checked := false
                 //Revert with (offset, size).
@@ -153,7 +153,7 @@ library LibStringUtils {
     function substring32(string memory str, uint startPos, uint endPos) internal pure returns(string memory result) {
         assembly {
             //This only works on 32 bit buffers. Use it if you want to substring on a string and that size is less than 32 bits long. Its more gas efficient
-            if gt(endPos, mload(str)){
+            if iszero(lt(endPos, mload(str))){
                 //Store the offset of NotValidLength()
                 mstore(0x00, 0x0d74140c)
                 //Revert with (offset, size).
@@ -183,7 +183,7 @@ library LibStringUtils {
     function substring(string memory str, uint startPos, uint endPos) internal pure returns(string memory result) {
         //This is less gas efficient but its not limited to just a 32bit buffer
         assembly {
-            if gt(endPos, mload(str)) {
+            if iszero(lt(endPos, mload(str))) {
                 //Store the offset of NotValidLength()
                 mstore(0x00, 0x0d74140c)
                 //Revert with (offset, size).
@@ -506,15 +506,13 @@ library LibStringUtils {
             let counter := 0
             //Counter for string length
             let lengthCounter := 0
-            //Counter for total substrings length
-            let arrMemoryAlloc := 0
             //Grabs hex value of the delimiter
             let pattern := shl(3, sub(32, and(delimLength, 31)))
             //Moves pointer to start of the string value
             val := add(val, 0x20)
             delim := add(delim, 0x20)
             let hash := 0
-            if gt(delimLength, 32){
+            if iszero(lt(delimLength, 32)){
                 hash := keccak256(delim, delimLength)
             }
             //Loops one char at a time
@@ -541,8 +539,6 @@ library LibStringUtils {
                         }
                         //Calculates the new pointer to store the new word
                         ptr := add(ptr, and(add(lengthCounter, 0x40), not(0x1f)))
-                        //Add to total string size
-                        arrMemoryAlloc := add(arrMemoryAlloc, lengthCounter)
                         //Reset the str length
                         lengthCounter := 0
                         // counter++
@@ -575,8 +571,6 @@ library LibStringUtils {
                     }
                     //Calculates the new pointer to store the new word
                     ptr := add(ptr, and(add(lengthCounter, 0x40), not(0x1f)))
-                    //Add to total string size
-                    arrMemoryAlloc := add(arrMemoryAlloc, lengthCounter)
                     //Reset the str length
                     lengthCounter := 0
                     // counter++
