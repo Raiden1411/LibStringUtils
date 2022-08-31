@@ -559,4 +559,34 @@ contract LibStringUtilsTest is Test {
             "miladymiladymiladymiladymiladymiladymiladymiladymiladymilady"
         );
     }
+
+    function testJoin() public {
+        string[] memory str = new string[](2);
+        str[0] = "Hello";
+        str[1] = "milady";
+
+        string memory _str = "baby";
+
+        string memory strjoin = LibStringUtils.join(str, _str);
+
+        assertEq(strjoin, "Hellobabymilady");
+    }
+
+    function testJoinLong() public {
+        string[] memory str = new string[](2);
+        str[1] = "miladymiladymiladymiladymiladymiladymiladymiladymiladymilady";
+        str[
+            0
+        ] = "hellohellohellohellohellohellohellohellohellohellohellohellohello";
+
+        string
+            memory _str = "babybabybabybabybabybabybabybabybabybabybabybabybabybabybabybabybabybaby";
+
+        string memory strjoin = LibStringUtils.join(str, _str);
+
+        assertEq(
+            strjoin,
+            "hellohellohellohellohellohellohellohellohellohellohellohellohellobabybabybabybabybabybabybabybabybabybabybabybabybabybabybabybabybabybabymiladymiladymiladymiladymiladymiladymiladymiladymiladymilady"
+        );
+    }
 }

@@ -595,6 +595,69 @@ library LibStringUtils {
         }
     }
 
+    function join(string[] memory subjects, string memory search) internal pure returns(string memory result){
+        assembly {
+            //Loads string from array and join string
+            let searchLength := mload(search)
+            let arrLength := mload(subjects)
+            let stringLength := 0
+            //Set start of pointer for string
+            search := add(search, 0x20)
+            //Loads free memory pointer
+            result := mload(0x40)
+            //Loops all array members
+            for {let i:= 1} lt(i, arrLength){i:= add(i, 1)}{
+                //Set start of pointer for string inside the array by 0x20 each loop
+                //In a array of string the array it self stores the pointers for the location of the string inside of memory
+                //So here we just need to go 32 bits at a time
+                subjects := add(subjects, 0x20)
+                //Load the actual string
+                let currentString := mload(subjects)
+                //Gets the length of the string in the loop
+                let currentStringLength := mload(currentString)
+                //Sets the pointer to the start of the string
+                currentString := add(currentString, 0x20)
+                //Loops one word at a time to store it in the result
+                for { let w := 0 } 1 {} {
+                    mstore(add(add(result, stringLength), add(w, 0x20)), mload(add(currentString, w)))
+                    w := add(w, 0x20)
+                    if iszero(lt(w, currentStringLength)) { break }
+                }
+                //Builds the total string length to use later
+                stringLength := add(currentStringLength, stringLength)
+                //Loops one word at a time for the string to join
+                for { let s := 0 } 1 {} {
+                    mstore(add(add(result, stringLength), add(s, 0x20)), mload(add(search, s)))
+                    s := add(s, 0x20)
+                    if iszero(lt(s, searchLength)) { break }
+                }
+                //Adds the length to the total
+                stringLength := add(searchLength, stringLength)
+            }
+            //Does this one more time but with out the string to join so it doesn't get added at the end
+            subjects := add(subjects, 0x20)
+            //Load the actual string
+            let currentString := mload(subjects)
+            //Gets the length of the string in the loop
+            let currentStringLength := mload(currentString)
+            //Sets the pointer to the start of the string
+            currentString := add(currentString, 0x20)
+            //Loops one word at a time to store it in the result
+            for { let w := 0 } 1 {} {
+                mstore(add(add(result, stringLength), add(w, 0x20)), mload(add(currentString, w)))
+                w := add(w, 0x20)
+                if iszero(lt(w, currentStringLength)) { break }
+            }
+            //Builds the total string length to use later
+            stringLength := add(currentStringLength, stringLength)
+            //Stores the total string length in the resulting string
+            mstore(result, stringLength)
+            // Allocate memory for the length and the bytes,
+            // rounded up to a multiple of 32.
+            mstore(0x40, add(result, and(add(stringLength, 0x40), not(0x1f))))
+        }
+    }
+
     // Everything down bellow is copied from solady (https://github.com/vectorized/solady/blob/main/src/utils/LibString.sol)
     // @author Copied from Solady
     function replace(
