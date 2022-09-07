@@ -23,7 +23,7 @@ test
 To install with [**Foundry**](https://github.com/gakonst/foundry):
 
 ```sh
-forge install 0xRaiden/LibStringUtils
+forge install Raiden1411/LibStringUtils
 ```
 
 ## Acknowledgements
