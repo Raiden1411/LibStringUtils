@@ -523,7 +523,7 @@ library LibStringUtils {
                 if hash {
                     if iszero(eq(keccak256(start, delimLength), hash)){
                         mstore(add(ptr, add(0x20, lengthCounter)), mload(start))
-                        //Adds one to word length
+                        //Adds one to the word length
                         lengthCounter := add(lengthCounter, 1)
                         //Skips to next char
                         i:= add(i, 1)
